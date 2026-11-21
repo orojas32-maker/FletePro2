@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+const base='http://127.0.0.1:4173';
+const headers=id=>({'oai-authenticated-user-id':id,'oai-authenticated-user-email':`${id}@example.test`,'Content-Type':'application/json',Origin:base});
+const read=async id=>{const r=await fetch(base+'/api/account',{headers:headers(id)});assert.equal(r.status,200);return r.json()};
+assert.equal((await fetch(base+'/api/account?userId=qa-a')).status,401);
+const a=await read('qa-a');const state={vehicles:[{id:'v1',name:'Test',config:'C2',axles:2,loaded:4,empty:5,maintenance:1,tires:0.5,depreciation:0.7,fixed:1,capacity:8000}],quotes:[]};
+const write=await fetch(base+'/api/account',{method:'PUT',headers:headers('qa-a'),body:JSON.stringify({revision:a.revision,state})});assert.equal(write.status,200);
+assert.equal((await read('qa-a')).state.vehicles[0].name,'Test');assert.equal((await read('qa-b')).state,null);
+const stale=await fetch(base+'/api/account',{method:'PUT',headers:headers('qa-a'),body:JSON.stringify({revision:9999,state})});assert.equal(stale.status,409);
+const foreign=await fetch(base+'/api/account',{method:'PUT',headers:{...headers('qa-a'),Origin:'https://invalid.example'},body:JSON.stringify({revision:1,state})});assert.equal(foreign.status,403);
+console.log('PASS: 401 sin sesión; guardado persistente; cuenta B separada; 409 revisión obsoleta; 403 origen ajeno.');

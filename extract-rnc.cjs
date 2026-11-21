@@ -1,0 +1,9 @@
+const fs=require('fs'),{DatabaseSync}=require('node:sqlite');
+const file=process.argv[2];if(!file)throw Error('Indica el archivo GeoPackage a extraer.');
+const db=new DatabaseSync(file,{readOnly:true});
+function point(bytes){const b=Buffer.from(bytes);if(b.toString('ascii',0,2)!=='GP')throw Error('Geometría inválida');const env=(b[3]>>1)&7,sizes=[0,32,48,48,64],p=8+sizes[env];const le=b[p]===1,type=le?b.readUInt32LE(p+1):b.readUInt32BE(p+1);if(type%1000!==1)throw Error('Se esperaba un punto');const x=le?b.readDoubleLE(p+5):b.readDoubleBE(p+5),y=le?b.readDoubleLE(p+13):b.readDoubleBE(p+13);if(x< -120||x> -85||y<13||y>34)throw Error('Coordenada fuera de México');return[x,y]}
+const plazas=db.prepare('select * from plaza_cobro').all().map(({geom,...r})=>({id:r.ID_PLAZA,name:r.NOMBRE,section:r.SECCION,subsection:r.SUBSECCION,mode:r.MODALIDAD,functional:r.FUNCIONAL,updated:r.FECHA_ACT,coordinates:point(geom)}));
+const tariffs=db.prepare('select * from tarifas').all().map(r=>({id:r.fid,exitId:r.ID_PLAZA,entryId:r.ID_PLAZA_E,entry:r.NOMBRE_ENT,exit:r.NOMBRE_SAL,truck:Array.from({length:8},(_,i)=>r['T_CAMION'+(i+2)]),updated:r.FECHA_ACT}));
+const structures=db.prepare('select * from estructura').all().map(({geom,...r})=>({id:r.ID_ESTRUCT,name:r.NOMBRE,type:r.TIPO,height:r.ALTURA,width:r.ANCHO,updated:r.FECHA_ACT,coordinates:point(geom)}));
+const data={version:1,edition:2025,source:require('path').basename(file),srs:'EPSG:6365 Mexico ITRF2008; coordenadas originales en grados',extractedAt:new Date().toISOString(),plazas,tariffs,structures};
+fs.writeFileSync('dist/rnc-data.js','window.FLETE_RNC='+JSON.stringify(data).replace(/</g,'\\u003c')+';');db.close();console.log(JSON.stringify({plazas:plazas.length,tariffs:tariffs.length,structures:structures.length,bytes:fs.statSync('dist/rnc-data.js').size}));

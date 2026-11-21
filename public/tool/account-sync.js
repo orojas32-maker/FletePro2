@@ -1,0 +1,12 @@
+{
+const account=window.FLETE_ACCOUNT;let revision=account.revision,dirty=false,saving=false,conflict=false,timer;
+const planName=account.role==='admin'?'Administrador':account.trial?'Premium · Desarrollo':account.plan==='professional'?'Suscripción profesional':'Cuenta gratuita';const status=document.querySelector('.private');status.textContent=planName+' · Guardado en la nube';
+const profile=document.querySelector('.aside-bottom');profile.replaceChildren();const name=document.createElement('div');name.textContent=account.user.name;const plan=document.createElement('small');plan.textContent=account.role==='admin'?'Administrador · Sin suscripción ni cobros':account.trial?'Premium habilitado · Sin cobro':account.plan==='professional'?'Plan profesional':'Plan gratuito · Prueba';name.append(plan);profile.append(name);
+const links=document.createElement('div');links.style.cssText='display:flex;gap:12px;padding:15px 0;font-size:12px';links.innerHTML='<a href="/#planes" target="_top">Planes</a><a href="/signout-with-chatgpt?return_to=%2F" target="_top">Cerrar sesión</a>';profile.before(links);
+async function saveCloud(){if(saving||!dirty||conflict)return;saving=true;dirty=false;status.textContent='Guardando en tu cuenta…';try{const r=await fetch('/api/account',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision,state:db})});const result=await r.json();if(!r.ok){conflict=true;throw Error(result.error||'No se pudo guardar');}revision=result.revision;status.textContent=planName+' · Guardado en la nube';}catch(e){dirty=true;status.textContent=e.message+' · Conserva un respaldo JSON';}finally{saving=false;if(dirty&&!conflict)timer=setTimeout(saveCloud,3000);}}
+const originalPersist=persist;persist=function(){const ok=originalPersist();if(ok){dirty=true;clearTimeout(timer);timer=setTimeout(saveCloud,400);}return ok;};
+if(window.fleteCatalogSeeded){window.fleteCatalogSeeded=false;persist();}
+window.addEventListener('beforeunload',e=>{if(dirty||saving){e.preventDefault();e.returnValue='';}});
+window.addEventListener('online',()=>{if(!conflict)saveCloud()});
+const info=document.createElement('p');info.className='hint';info.textContent='Tu cuenta guarda perfiles de unidades y cotizaciones que guardes. El borrador del formulario no se sincroniza. Los datos de la versión anterior permanecen en ese navegador: puedes restaurarlos desde un respaldo JSON.';document.querySelector('#data article').prepend(info);
+}

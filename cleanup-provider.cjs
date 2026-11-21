@@ -1,0 +1,1 @@
+const fs=require('fs');let s=fs.readFileSync('dist/map-context.js','utf8');s=s.replace('if(routeMap){','if(routeMap){\n  document.querySelectorAll(\'a[href="https://www.openstreetmap.org/copyright"]\').forEach(a=>{const p=a.closest("p");if(p)p.remove();});');fs.writeFileSync('dist/map-context.js',s);

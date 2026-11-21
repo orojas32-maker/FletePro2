@@ -1,0 +1,1 @@
+const fs=require('fs');let h=fs.readFileSync('dist/index.html','utf8').replace('</body>','<script src="route-expenses.js"></script></body>');fs.writeFileSync('dist/index.html',h);let b=fs.readFileSync('bundle.cjs','utf8').replace("'route-map','map-context'","'route-map','map-context','route-expenses'");fs.writeFileSync('bundle.cjs',b);

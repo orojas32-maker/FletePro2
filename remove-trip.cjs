@@ -1,0 +1,5 @@
+const fs=require('fs');
+let h=fs.readFileSync('dist/index.html','utf8').replace('<form id="quoteForm"><article>','<form id="quoteForm"><article hidden id="internalTripData">');
+h=h.replace('<em>02</em> Casetas','<em>01</em> Casetas').replace('<em>03</em> Ajusta','<em>02</em> Ajusta').replace('<em>04</em> Define tu precio','<em>03</em> Define tu precio');fs.writeFileSync('dist/index.html',h);
+let s=fs.readFileSync('dist/route-tolls.js','utf8');s=s.replace('<th>Importe</th>','<th>Efectivo</th><th>Telepeaje / TAG</th><th>Importe</th>');s=s.replace('</small></td><td>${t.amount','</small></td><td>Por verificar</td><td>Por verificar<small>TAG aceptados sin confirmar</small></td><td>${t.amount');
+s += '\nconst paymentNote=document.createElement("p");paymentNote.className="hint";paymentNote.textContent="Medios de pago pendientes de confirmar con el operador de cada plaza. La RNC no informa aceptación de efectivo ni marcas de TAG. Por verificar no significa que no se acepten.";$("#tolls").after(paymentNote);\n';fs.writeFileSync('dist/route-tolls.js',s);
